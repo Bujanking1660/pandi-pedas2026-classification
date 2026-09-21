@@ -38,6 +38,15 @@ KEYWORD_MAP = {
     'phishing': ['verify', 'login', 'account', 'secure-', 'confirm-account'],
 }
 
+# Kosakata kategori resmi PANDI/PeDaS 2026 (evaluate.py panitia).
+# PENTING: "piiexposure" TIDAK ADA underscore -- beda dari penulisan umum "pii_exposure".
+# Kalau nama kategori submission tidak persis cocok salah satu dari ini,
+# baris itu dianggap "category tidak dikenal" -> SELURUH submission jadi INVALID (macro_f1=None).
+VALID_CATEGORIES = {
+    "online gambling", "phishing", "other", "spam", "malware",
+    "brand", "fakeshop", "violence", "piiexposure",
+}
+
 MIN_COUNT_IP = 5
 MIN_COUNT_SUBNET = 10
 MIN_COUNT_DOMAIN = 5
@@ -47,6 +56,20 @@ SCORE_KEYWORD = 3
 SCORE_IP_EXACT = 2
 SCORE_SUBNET = 2
 SCORE_DOMAIN = 1
+
+
+def assert_valid_categories(categories, context=""):
+    """
+    Wajib dipanggil sebelum menyimpan submission atau setelah cat_map diterapkan.
+    Cegah bug fatal: nama kategori yang tidak persis cocok VALID_CATEGORIES
+    akan membuat SELURUH submission dianggap invalid oleh evaluator panitia.
+    """
+    unexpected = set(categories) - VALID_CATEGORIES
+    if unexpected:
+        raise ValueError(
+            f"Kategori tidak dikenal evaluator ({context}): {unexpected}\n"
+            f"Kategori resmi yang valid: {sorted(VALID_CATEGORIES)}"
+        )
 
 
 # ============================================================
@@ -287,5 +310,6 @@ def score_confidence_evidence(df, ref_ip_stats, ref_subnet_stats, url_col='url',
 if __name__ == "__main__":
     print("Modul ini dirancang untuk di-IMPORT dari notebook, bukan dijalankan langsung.")
     print("Contoh pemakaian:")
-    print("  from audit_mislabel import audit_mislabel, apply_relabel")
+    print("  from audit_mislabel import audit_mislabel, apply_relabel, assert_valid_categories")
     print("  train_audited = audit_mislabel(train)")
+    print("  assert_valid_categories(train['category'].unique(), context='train setelah cleaning')")
